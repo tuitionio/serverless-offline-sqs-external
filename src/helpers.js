@@ -29,7 +29,7 @@ export const omit = (keys, obj) => {
     delete cp[key];
   });
   return cp;
-}
+};
 
 export const isPlainObject = (obj) => {
   let key;
@@ -52,6 +52,7 @@ export const isFalsey = (val) => {
   return false;
 };
 
+// eslint-disable-next-line no-console
 export const printBlankLine = () => console.log();
 
 export const extractQueueNameFromARN = (arn) => {

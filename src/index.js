@@ -1,6 +1,5 @@
-import {
-  Credentials, Endpoint, SQS, Lambda,
-} from 'aws-sdk';
+import { Lambda } from '@aws-sdk/client-lambda';
+import { SQS } from '@aws-sdk/client-sqs';
 import { URL } from 'url';
 
 import {
@@ -69,12 +68,12 @@ class ServerlessOfflineSQSExternal {
   getClient() {
     const config = this.getSqsConfig();
     const sqsConfig = {
-      endpoint: new Endpoint(config.endpoint),
+      endpoint: config.endpoint,
       region: config.region,
-      credentials: new Credentials({
+      credentials: {
         accessKeyId: config.accessKeyId,
         secretAccessKey: config.secretAccessKey,
-      }),
+      },
     };
     return new SQS(sqsConfig);
   }
@@ -176,12 +175,12 @@ class ServerlessOfflineSQSExternal {
     const offlineConfg = this.getOfflineConfig();
     const lambdaConfig = {
       apiVersion: '2015-03-31',
-      endpoint: new Endpoint(offlineConfg.endpoint),
+      endpoint: offlineConfg.endpoint,
       region: awsRegion,
-      credentials: new Credentials({
+      credentials: {
         accessKeyId: 'foo',
         secretAccessKey: 'bar',
-      }),
+      },
     };
     const lambda = new Lambda(lambdaConfig);
 
@@ -191,7 +190,7 @@ class ServerlessOfflineSQSExternal {
       Payload: JSON.stringify(event),
     };
 
-    await lambda.invoke(params).promise();
+    await lambda.invoke(params);
 
     process.env = env;
     return null;
@@ -209,10 +208,10 @@ class ServerlessOfflineSQSExternal {
         QueueName,
         Attributes: omit(['QueueName'], properties),
       };
-      await client.createQueue(params).promise();
+      await client.createQueue(params);
     }
 
-    let { QueueUrl } = await client.getQueueUrl({ QueueName }).promise();
+    let { QueueUrl } = await client.getQueueUrl({ QueueName });
     QueueUrl = QueueUrl.replace('localhost', sqsConfig.host);
 
     const next = async () => {
@@ -224,7 +223,7 @@ class ServerlessOfflineSQSExternal {
           MessageAttributeNames: ['All'],
           WaitTimeSeconds: 20,
         },
-      ).promise();
+      );
 
       if (Messages) {
         try {
@@ -238,7 +237,7 @@ class ServerlessOfflineSQSExternal {
               })),
               QueueUrl,
             },
-          ).promise();
+          );
         } catch (err) {
           this.serverless.cli.log(err.stack);
         }
