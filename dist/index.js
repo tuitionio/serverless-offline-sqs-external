@@ -185,20 +185,19 @@ class ServerlessOfflineSQSExternal {
     });
     QueueUrl = QueueUrl.replace('localhost', sqsConfig.host);
     const next = async () => {
-      const {
-        Messages
-      } = await client.receiveMessage({
+      var _receiveMessageOutput;
+      const receiveMessageOutput = await client.receiveMessage({
         QueueUrl,
         MaxNumberOfMessages: queueEvent.batchSize,
         AttributeNames: ['All'],
         MessageAttributeNames: ['All'],
         WaitTimeSeconds: 20
       });
-      if (Messages) {
+      if (receiveMessageOutput !== null && receiveMessageOutput !== void 0 && (_receiveMessageOutput = receiveMessageOutput.Messages) !== null && _receiveMessageOutput !== void 0 && _receiveMessageOutput.length) {
         try {
-          await this.eventHandler(queueEvent, functionName, Messages);
-          await client.deleteMessageBatch({
-            Entries: (Messages || []).map(({
+          await this.eventHandler(queueEvent, functionName, receiveMessageOutput.Messages);
+          const command = new _clientSqs.DeleteMessageBatchCommand({
+            Entries: receiveMessageOutput.Messages.map(({
               MessageId: Id,
               ReceiptHandle
             }) => ({
@@ -207,6 +206,7 @@ class ServerlessOfflineSQSExternal {
             })),
             QueueUrl
           });
+          await client.send(command);
         } catch (err) {
           this.serverless.cli.log(err.stack);
         }

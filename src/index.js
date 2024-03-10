@@ -1,5 +1,5 @@
 import { Lambda } from '@aws-sdk/client-lambda';
-import { SQS } from '@aws-sdk/client-sqs';
+import { DeleteMessageBatchCommand, SQS } from '@aws-sdk/client-sqs';
 import { URL } from 'url';
 
 import {
@@ -215,7 +215,7 @@ class ServerlessOfflineSQSExternal {
     QueueUrl = QueueUrl.replace('localhost', sqsConfig.host);
 
     const next = async () => {
-      const { Messages } = await client.receiveMessage(
+      const receiveMessageOutput = await client.receiveMessage(
         {
           QueueUrl,
           MaxNumberOfMessages: queueEvent.batchSize,
@@ -225,19 +225,19 @@ class ServerlessOfflineSQSExternal {
         },
       );
 
-      if (Messages) {
+      if (receiveMessageOutput?.Messages?.length) {
         try {
-          await this.eventHandler(queueEvent, functionName, Messages);
+          await this.eventHandler(queueEvent, functionName, receiveMessageOutput.Messages);
 
-          await client.deleteMessageBatch(
-            {
-              Entries: (Messages || []).map(({ MessageId: Id, ReceiptHandle }) => ({
-                Id,
-                ReceiptHandle,
-              })),
-              QueueUrl,
-            },
-          );
+          const command = new DeleteMessageBatchCommand({
+            Entries: receiveMessageOutput.Messages.map(({ MessageId: Id, ReceiptHandle }) => ({
+              Id,
+              ReceiptHandle,
+            })),
+            QueueUrl,
+          });
+
+          await client.send(command);
         } catch (err) {
           this.serverless.cli.log(err.stack);
         }
