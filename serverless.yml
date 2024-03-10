@@ -22,7 +22,7 @@ custom:
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs18.x
   memorySize: 512
   stage: ${self:custom.currentStage}
   timeout: 10

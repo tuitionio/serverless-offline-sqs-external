@@ -12,7 +12,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   test:
-    image: node:12.16.3-buster-slim
+    image: node:18.19.1-buster-slim
     depends_on:
       - localstack
     volumes:
